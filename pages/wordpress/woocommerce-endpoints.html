@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WooCommerce My Account endpointi — WordPress — shadow-docs</title>
+<meta name="description" content="add_rewrite_endpoint, woocommerce_account_menu_items un custom endpoint hook — pilnīgs piemērs custom cilnes izveidei WooCommerce kontā.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link active" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / <a href="/pages/wordpress/">WordPress</a> / WooCommerce endpointi</div>
+    <h1>WooCommerce My Account endpointi</h1>
+    <p class="lede">Lai kontā ("Mans konts") pievienotu pilnīgi jaunu cilni — piem. "Mans abonements" — nepieciešami trīs saskaņoti elementi: URL endpoints, izvēlnes ieraksts un funkcija, kas renderē satura daļu.</p>
+
+    <h2>1. Reģistrē endpointu ar <code>add_rewrite_endpoint</code></h2>
+    <p>Šis pasaka WordPress, ka URL <code>/mans-konts/abonements/</code> ir derīgs — bez tā WordPress to uzskatītu par 404.</p>
+
+    <pre><code>add_action( 'init', function() {
+	add_rewrite_endpoint( 'abonements', EP_ROOT | EP_PAGES );
+});</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Pēc pievienošanas jāpārsaglabā permalinki</div>
+      <code>add_rewrite_endpoint</code> reģistrē endpointu tikai atmiņā katrā pieprasījumā — pašus rewrite noteikumus WordPress kešo datubāzē. Pēc pirmās izvietošanas jāatver <strong>Iestatījumi → Pastāvīgās saites</strong> un jānospiež "Saglabāt" (vai jāizsauc <code>flush_rewrite_rules()</code> vienreiz), citādi endpoints turpina rādīt 404.
+    </div>
+
+    <h2>2. Pievieno cilni izvēlnē ar <code>woocommerce_account_menu_items</code></h2>
+    <p>Šis filtrs saņem sakārtotu masīvu <code>['dashboard' => 'Panelis', 'orders' => 'Pasūtījumi', ...]</code>. Lai ievietotu jaunu cilni <em>konkrētā vietā</em> (nevis tikai galā), masīvu jāveido no jauna:</p>
+
+    <pre><code>add_filter('woocommerce_account_menu_items', function($items) {
+	unset($items['downloads']); // paslēpj noklusējuma cilni
+
+	// Ievieto "Mans abonements" tieši pēc "Panelis"
+	$new = [];
+	foreach ($items as $key => $label) {
+		$new[$key] = $label;
+		if ($key === 'dashboard') {
+			$new['abonements'] = 'Mans abonements';
+		}
+	}
+	return $new;
+});</code></pre>
+
+    <h2>3. Renderē satura daļu ar <code>woocommerce_account_{endpoint}_endpoint</code></h2>
+    <p>WooCommerce automātiski izsauc hooku <code>woocommerce_account_&lt;endpoint-nosaukums&gt;_endpoint</code>, kad lietotājs atver šo URL. Nosaukumā jāsakrīt tieši ar to, ko reģistrēji 1. solī:</p>
+
+    <pre><code>add_action('woocommerce_account_abonements_endpoint', function() {
+	$user_id = get_current_user_id();
+	$sub_end = get_user_meta($user_id, 'subscription_end', true);
+
+	$now    = time();
+	$active = $sub_end && $sub_end > $now;
+	?>
+	&lt;h3&gt;Abonements&lt;/h3&gt;
+	&lt;table class="woocommerce-table shop_table"&gt;
+		&lt;tr&gt;
+			&lt;th&gt;Statuss&lt;/th&gt;
+			&lt;td&gt;&lt;?php echo $active ? '✅ Aktīvs' : '❌ Neaktīvs'; ?&gt;&lt;/td&gt;
+		&lt;/tr&gt;
+		&lt;?php if ($sub_end): ?&gt;
+		&lt;tr&gt;
+			&lt;th&gt;Beidzas&lt;/th&gt;
+			&lt;td&gt;&lt;?php echo date('d.m.Y H:i', $sub_end); ?&gt;&lt;/td&gt;
+		&lt;/tr&gt;
+		&lt;?php endif; ?&gt;
+	&lt;/table&gt;
+	&lt;?php
+});</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Vienmēr <code>esc_html()</code> lietotāja datiem</div>
+      Piemērā virs šī <code>$sub_end</code> nāk no <code>get_user_meta</code> un tiek formatēts ar <code>date()</code>, tāpēc tas ir droši izvadāms tiešā veidā. Bet dati, kas var saturēt brīvu tekstu (piem. maksājumu vēsture ar summām/statusiem, ko kāds varētu ievadīt caur formu), pirms izvades vienmēr jāapstrādā ar <code>esc_html()</code> — tā tas ir darīts pilnajā "Maksājumu vēsture" tabulā oriģinālajā tēmā.
+    </div>
+
+    <h2>Pilns, palaižams piemērs</h2>
+    <p>Trīs daļas kopā — reāli strādā jaunā plugin failā vai <code>functions.php</code>, ja WooCommerce ir aktivizēts:</p>
+
+    <pre><code>&lt;?php
+// 1. Endpoint reģistrācija
+add_action( 'init', function() {
+	add_rewrite_endpoint( 'lojalitate', EP_ROOT | EP_PAGES );
+});
+
+// 2. Izvēlnes ieraksts
+add_filter( 'woocommerce_account_menu_items', function( $items ) {
+	$new = [];
+	foreach ( $items as $key => $label ) {
+		$new[$key] = $label;
+		if ( $key === 'dashboard' ) {
+			$new['lojalitate'] = 'Lojalitātes punkti';
+		}
+	}
+	return $new;
+});
+
+// 3. Satura renderēšana
+add_action( 'woocommerce_account_lojalitate_endpoint', function() {
+	$points = get_user_meta( get_current_user_id(), 'loyalty_points', true ) ?: 0;
+	echo '&lt;h3&gt;Lojalitātes punkti&lt;/h3&gt;';
+	echo '&lt;p&gt;Tev ir &lt;strong&gt;' . esc_html( $points ) . '&lt;/strong&gt; punkti.&lt;/p&gt;';
+});</code></pre>
+
+    <p><strong>Pēc ielīmēšanas:</strong> atver Iestatījumi → Pastāvīgās saites → Saglabāt izmaiņas (lai reģistrētu rewrite noteikumu), tad atver "Mans konts" — jaunā cilne būs redzama.</p>
+
+    <div class="page-nav">
+      <a href="/pages/wordpress/ajax-un-nonce.html"><span class="dir">← Atpakaļ</span>AJAX un nonce</a>
+      <a href="/pages/wordpress/lomas-un-tiesibas.html" style="text-align:right;"><span class="dir">Tālāk →</span>Lomas un tiesības</a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>

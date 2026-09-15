@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooki un filtri — WordPress — shadow-docs</title>
+<meta name="description" content="add_action vs add_filter, prioritātes, argumentu skaits un biznesa loģikas piesaiste WooCommerce statusu hookiem. Pilnīgs koda piemērs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link active" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / <a href="/pages/wordpress/">WordPress</a> / Hooki un filtri</div>
+    <h1>Hooki un filtri</h1>
+    <p class="lede">Visas iepriekšējās lapas izmantoja <code>add_action</code> un <code>add_filter</code> — šī lapa paskaidro, kā tie strādā apakšā, un parāda, kā ap tiem uzbūvēt reālu biznesa loģiku: piekļuves piešķiršanu kursam pēc apmaksas.</p>
+
+    <h2>1. Darbība (<code>action</code>) vs filtrs (<code>filter</code>)</h2>
+    <table>
+      <thead><tr><th></th><th><code>add_action</code></th><th><code>add_filter</code></th></tr></thead>
+      <tbody>
+        <tr><td>Nolūks</td><td>izdarīt kaut ko (nosūtīt e-pastu, ierakstīt log)</td><td>pārveidot vērtību un atgriezt to</td></tr>
+        <tr><td>Atgriešanas vērtība</td><td>tiek ignorēta</td><td>obligāti jāatgriež vērtība</td></tr>
+        <tr><td>Piemērs no šīs sadaļas</td><td><code>woocommerce_order_status_completed</code></td><td><code>woocommerce_account_menu_items</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <div class="callout-title">Biežākā kļūda: filtra funkcija, kas neatgriež vērtību</div>
+      Ja <code>add_filter</code> callback funkcija aizmirst <code>return</code>, filtrētā vērtība pārtop uz <code>null</code> — piemēram, "WooCommerce My Account" izvēlnes lapā tas nozīmētu tukšu, bez cilnēm izvēlni. Katram filtram funkcijas beigās vienmēr jābūt <code>return $vertiba;</code>.
+    </div>
+
+    <h2>2. Prioritāte un argumentu skaits</h2>
+    <p><code>add_action( 'hook_nosaukums', 'funkcija', $prioritate, $argumentu_skaits )</code> — pēdējie divi parametri ir opcionāli, bet svarīgi:</p>
+    <ul>
+      <li><strong>Prioritāte</strong> (noklusējums <code>10</code>) — mazāks skaitlis izpildās pirmais. Zemāku prioritāti izmanto, lai kaut ko sagatavotu <em>pirms</em> citiem; augstāku (piem. <code>999</code>), lai pārliecinātos, ka kas cits (kodols, spraudnis) jau ir paveicis savu darbu — sk. <a href="/pages/wordpress/lomas-un-tiesibas.html">izvēlņu noņemšanas piemēru</a>.</li>
+      <li><strong>Argumentu skaits</strong> (noklusējums <code>1</code>) — WordPress pēc noklusējuma padod tikai <em>pirmo</em> hooka argumentu tavai funkcijai. Ja hooks piedāvā vairākus (piem. <code>gettext</code> padod trīs — tulkoto tekstu, oriģinālo tekstu un domēnu), un tavai funkcijai nepieciešami visi, jānorāda skaits:</li>
+    </ul>
+
+    <pre><code>add_filter('gettext', function($translated, $text, $domain) {
+	if ($domain === 'woocommerce' && strpos($text, 'From your account dashboard') !== false) {
+		return 'Laipni lūdzam savā kontā!';
+	}
+	return $translated;
+}, 20, 3); // <- "3" nepieciešams, citādi $text un $domain vienmēr būtu null</code></pre>
+
+    <h2>3. Piemērs: biznesa loģika, kas dzīvo hookā</h2>
+    <p>Kad pasūtījums WooCommerce mainās uz statusu "Pabeigts", tas izsauc hooku <code>woocommerce_order_status_completed</code> ar pasūtījuma ID. Tas ir pareizais vieta, kur piešķirt piekļuvi digitālam produktam — nevis maksājumu procesorā vai kaut kur front-end:</p>
+
+    <pre><code>add_action( 'woocommerce_order_status_completed', 'asg_grant_course_access', 10, 1 );
+
+function asg_grant_course_access( $order_id ) {
+	$order = wc_get_order( $order_id );
+	if ( ! $order ) return;
+
+	$user_id = $order->get_user_id();
+	if ( ! $user_id ) return; // Viesu pirkums — izlaižam
+
+	foreach ( $order->get_items() as $item ) {
+		$product_id = $item->get_product_id();
+
+		$courses = get_user_meta( $user_id, 'asg_course_access', true );
+		if ( ! is_array( $courses ) ) $courses = [];
+
+		$now         = time();
+		$four_months = 4 * 30 * DAY_IN_SECONDS;
+
+		// Ja piekļuve jau aktīva — pagarina no beigu datuma, nevis no tagad
+		if ( isset( $courses[$product_id] ) && $courses[$product_id]['expires'] > $now ) {
+			$courses[$product_id]['expires'] += $four_months;
+		} else {
+			$courses[$product_id] = [
+				'granted' => $now,
+				'expires' => $now + $four_months,
+				'order_id' => $order_id,
+			];
+		}
+
+		update_user_meta( $user_id, 'asg_course_access', $courses );
+	}
+}
+
+// Palīgfunkcija — izmanto to jebkur, kur jāpārbauda piekļuve
+function asg_has_course_access( $product_id, $user_id = null ) {
+	if ( ! $user_id ) $user_id = get_current_user_id();
+	if ( ! $user_id ) return false;
+
+	$courses = get_user_meta( $user_id, 'asg_course_access', true );
+	if ( ! is_array( $courses ) || ! isset( $courses[$product_id] ) ) return false;
+
+	return $courses[$product_id]['expires'] > time();
+}</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Kāpēc "pagarina no beigu datuma", ne no tagad</div>
+      Ja lietotājam jau ir aktīvs abonements un viņš pirkst to pašu kursu atkārtoti (piem. atjauno pirms termiņa beigām), pievienojot 4 mēnešus no <em>šodienas</em>, viņš pazaudētu atlikušo laiku no iepriekšējā perioda. Pievienojot no <code>expires</code>, laiks summējas pareizi.
+    </div>
+
+    <h2>Kopsavilkums: kā šīs piecas lapas savienojas</h2>
+    <p>Šis ir viens un tas pats <code>functions.php</code> fails, sadalīts pa tēmām:</p>
+    <ul>
+      <li><a href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a> ielādē <code>asgData</code> ar nonce priekšgalam.</li>
+      <li><a href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a> izmanto šo <code>asgData</code> nonci, lai droši pievienotu preci grozam.</li>
+      <li>Pēc apmaksas <strong>šīs lapas</strong> hooks <code>woocommerce_order_status_completed</code> piešķir piekļuvi kursam.</li>
+      <li><a href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a> parāda šo piekļuvi/abonementu lietotāja kontā.</li>
+      <li><a href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a> nosaka, kurš no admin puses drīkst šīs iestatījumus mainīt.</li>
+    </ul>
+
+    <div class="page-nav">
+      <a href="/pages/wordpress/lomas-un-tiesibas.html"><span class="dir">← Atpakaļ</span>Lomas un tiesības</a>
+      <a href="/pages/wordpress/" style="text-align:right;"><span class="dir">Gatavs</span>WordPress pārskats</a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>

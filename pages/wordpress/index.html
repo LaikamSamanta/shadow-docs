@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordPress — shadow-docs</title>
+<meta name="description" content="WordPress tēmas uzstādīšana, AJAX, WooCommerce endpointi, lomas un hooki — pilnīgi koda piemēri no reālas tēmas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link active" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / WordPress</div>
+    <span class="tag" style="border-color: var(--c-wordpress); color: var(--c-wordpress);">Kategorija</span>
+    <h1>WordPress</h1>
+    <p class="lede">Šī sadaļa ir veidota no tēmas <strong>Atvērt Savu Gaismu</strong> reālā koda — WooCommerce kursu platforma ar abonementiem, AJAX grozu un lomu ierobežojumiem. Katrs piemērs zemāk ir izvilkts no strādājoša <code>functions.php</code> un ir pilnīgs, ne fragmentārs.</p>
+
+    <div class="card-grid">
+      <a class="card" href="/pages/wordpress/tema-uzstadisana.html" style="--cat-soft: var(--c-wordpress-soft);">
+        <div class="card-icon" style="color: var(--c-wordpress);">1</div>
+        <h3>Tēmas uzstādīšana un resursi</h3>
+        <p><code>after_setup_theme</code>, <code>wp_enqueue_scripts</code>, navigācijas izvēlnes, custom page templates reģistrācija.</p>
+      </a>
+      <a class="card" href="/pages/wordpress/ajax-un-nonce.html" style="--cat-soft: var(--c-wordpress-soft);">
+        <div class="card-icon" style="color: var(--c-wordpress);">2</div>
+        <h3>AJAX un nonce pārbaude</h3>
+        <p><code>wp_ajax_</code> / <code>wp_ajax_nopriv_</code>, <code>check_ajax_referer</code>, <code>wp_localize_script</code>, JSON atbildes.</p>
+      </a>
+      <a class="card" href="/pages/wordpress/woocommerce-endpoints.html" style="--cat-soft: var(--c-wordpress-soft);">
+        <div class="card-icon" style="color: var(--c-wordpress);">3</div>
+        <h3>WooCommerce My Account endpointi</h3>
+        <p>Custom cilnes kontā ar <code>add_rewrite_endpoint</code>, <code>woocommerce_account_menu_items</code>.</p>
+      </a>
+      <a class="card" href="/pages/wordpress/lomas-un-tiesibas.html" style="--cat-soft: var(--c-wordpress-soft);">
+        <div class="card-icon" style="color: var(--c-wordpress);">4</div>
+        <h3>Lomas, tiesības un admin panelis</h3>
+        <p><code>current_user_can</code>, <code>remove_menu_page</code>, Customizer ierobežojumi redaktoriem.</p>
+      </a>
+      <a class="card" href="/pages/wordpress/hooks-un-filtri.html" style="--cat-soft: var(--c-wordpress-soft);">
+        <div class="card-icon" style="color: var(--c-wordpress);">5</div>
+        <h3>Hooki un filtri</h3>
+        <p>Kā strādā <code>add_action</code> / <code>add_filter</code>, prioritātes, argumentu skaits, biznesa loģikas piesaiste hookiem.</p>
+      </a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>

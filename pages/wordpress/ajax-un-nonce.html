@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AJAX un nonce pārbaude — WordPress — shadow-docs</title>
+<meta name="description" content="wp_ajax_, wp_ajax_nopriv_, check_ajax_referer un wp_send_json_success — pilnīgs PHP + JS piemērs no WooCommerce groza AJAX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link active" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / <a href="/pages/wordpress/">WordPress</a> / AJAX un nonce</div>
+    <h1>AJAX un nonce pārbaude</h1>
+    <p class="lede">WordPress AJAX vienmēr iet caur vienu un to pašu URL — <code>admin-ajax.php</code>. Kurš PHP kods izpildās, nosaka <code>action</code> parametrs pieprasījumā. Drošību nodrošina nonce — vienreizējs, laikā ierobežots tokens.</p>
+
+    <h2>1. Divi hooki katrai AJAX darbībai</h2>
+    <p>Jāreģistrē <strong>divi</strong> hooki, ja pieprasījumu var sūtīt arī neielogojies lietotājs (piem. groza darbības viesim):</p>
+
+    <pre><code>add_action( 'wp_ajax_asg_add_course_to_cart',        'asg_ajax_add_course_to_cart' ); // ielogojies
+add_action( 'wp_ajax_nopriv_asg_add_course_to_cart', 'asg_ajax_add_course_to_cart' ); // viesis</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Bieža kļūda</div>
+      Ja aizmirsti <code>wp_ajax_nopriv_</code> versiju, pieprasījums no neielogota lietotāja vienkārši neizsauc funkciju vispār — WordPress atgriež tukšu <code>0</code> atbildi, bez kļūdas paziņojuma. Tas parasti izskatās pēc "AJAX nestrādā", nevis pēc tiesību problēmas.
+    </div>
+
+    <h2>2. Nonce: kā tas nonāk no PHP uz JS</h2>
+    <p>Nonce tiek izveidots PHP pusē ar <code>wp_create_nonce()</code> un nodots JavaScript pusei caur <code>wp_localize_script()</code> (sk. <a href="/pages/wordpress/tema-uzstadisana.html">tēmas uzstādīšanas lapu</a>):</p>
+
+    <pre><code>wp_localize_script( 'asg-scripts', 'asgData', array(
+	'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+	'nonce'   => wp_create_nonce( 'asg_nonce' ),
+) );</code></pre>
+
+    <p>Serverī pieprasījuma sākumā to pārbauda <code>check_ajax_referer()</code> — pirmais parametrs jāsakrīt ar to, ko izmantoji <code>wp_create_nonce()</code>:</p>
+
+    <pre><code>function asg_ajax_add_course_to_cart() {
+	check_ajax_referer( 'asg_nonce', 'nonce' ); // izbeidz izpildi ar 403, ja nonce nederīgs
+
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'reason' => 'not_logged_in' ) );
+	}
+
+	$product_id = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+	if ( ! $product_id ) {
+		wp_send_json_error( array( 'reason' => 'invalid_product' ) );
+	}
+
+	$added = WC()->cart->add_to_cart( $product_id );
+
+	if ( $added ) {
+		$cart_items = array();
+		foreach ( WC()->cart->get_cart() as $item ) {
+			$prod = $item['data'];
+			$cart_items[] = array(
+				'name'  => $prod->get_name(),
+				'qty'   => $item['quantity'],
+				'price' => WC()->cart->get_product_price( $prod ),
+			);
+		}
+
+		wp_send_json_success( array(
+			'items'        => $cart_items,
+			'total'        => WC()->cart->get_cart_total(),
+			'checkout_url' => wc_get_checkout_url(),
+		) );
+	} else {
+		wp_send_json_error( array( 'reason' => 'add_failed' ) );
+	}
+}</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Kāpēc <code>wp_send_json_success</code> / <code>wp_send_json_error</code>, nevis <code>echo json_encode()</code></div>
+      Abas funkcijas automātiski uzstāda <code>Content-Type: application/json</code> galveni un — svarīgi — izsauc <code>wp_die()</code> pēc izvades. Bez tā PHP process turpina strādāt un WordPress pievieno papildu izvadi (piem. <code>0</code>) pēc tavas JSON atbildes, kas to sabojā priekšgala pusē.
+    </div>
+
+    <h2>3. Priekšgala JS puse — <code>fetch()</code> pret <code>admin-ajax.php</code></h2>
+    <pre><code>function addCourseToCart(productId) {
+	return fetch(asgData.ajaxUrl, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: new URLSearchParams({
+			action: 'asg_add_course_to_cart',
+			product_id: productId,
+			nonce: asgData.nonce,
+		}),
+	})
+		.then((res) => res.json())
+		.then((json) => {
+			if (!json.success) {
+				console.error('Grozam nepievienoja:', json.data.reason);
+				return;
+			}
+			console.log('Grozā:', json.data.items, 'Kopā:', json.data.total);
+		});
+}</code></pre>
+
+    <h2>Pilns, minimāls piemērs (bez WooCommerce)</h2>
+    <p>Tas pats modelis darbojas jebkurai AJAX darbībai — šis piemērs neprasa WooCommerce un ir pilnībā palaižams jaunā spraudnī vai <code>functions.php</code>:</p>
+
+    <pre><code>&lt;?php
+// --- PHP: reģistrē un apstrādā ---
+add_action( 'wp_ajax_sd_save_note',        'sd_save_note' );
+add_action( 'wp_ajax_nopriv_sd_save_note', 'sd_save_note' );
+
+function sd_save_note() {
+	check_ajax_referer( 'sd_nonce', 'nonce' );
+
+	$note = isset( $_POST['note'] ) ? sanitize_text_field( wp_unslash( $_POST['note'] ) ) : '';
+	if ( '' === $note ) {
+		wp_send_json_error( array( 'reason' => 'empty_note' ) );
+	}
+
+	update_option( 'sd_last_note', $note );
+	wp_send_json_success( array( 'saved' => $note ) );
+}
+
+// --- Enqueue + nonce nodošana JS pusei ---
+add_action( 'wp_enqueue_scripts', function () {
+	wp_enqueue_script( 'sd-notes', get_template_directory_uri() . '/assets/js/notes.js', array(), '1.0.0', true );
+	wp_localize_script( 'sd-notes', 'sdData', array(
+		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		'nonce'   => wp_create_nonce( 'sd_nonce' ),
+	) );
+} );</code></pre>
+
+    <pre><code>// assets/js/notes.js
+document.getElementById('save-note-btn')?.addEventListener('click', () => {
+	const note = document.getElementById('note-input').value;
+
+	fetch(sdData.ajaxUrl, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: new URLSearchParams({ action: 'sd_save_note', note, nonce: sdData.nonce }),
+	})
+		.then((res) => res.json())
+		.then((json) => console.log(json.success ? 'Saglabāts' : json.data.reason));
+});</code></pre>
+
+    <div class="page-nav">
+      <a href="/pages/wordpress/tema-uzstadisana.html"><span class="dir">← Atpakaļ</span>Tēmas uzstādīšana</a>
+      <a href="/pages/wordpress/woocommerce-endpoints.html" style="text-align:right;"><span class="dir">Tālāk →</span>WooCommerce endpointi</a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>

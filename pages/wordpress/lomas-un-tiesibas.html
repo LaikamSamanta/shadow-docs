@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lomas un tiesības — WordPress — shadow-docs</title>
+<meta name="description" content="current_user_can, remove_menu_page, admin_head un customize_register — kā ierobežot redaktora lomu admin panelī. Pilnīgs koda piemērs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link active" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / <a href="/pages/wordpress/">WordPress</a> / Lomas un tiesības</div>
+    <h1>Lomas, tiesības un admin panelis</h1>
+    <p class="lede">Bieži klientu WordPress vietnēs "Redaktors" loma nedrīkst redzēt visu — nav vajadzības pēc Rakstiem, Tēmas failu redaktora vai Customizer izvēlnēm, ko tas var sabojāt. Šeit ir četri reāli paņēmieni, kā to ierobežot.</p>
+
+    <h2>1. Pārbaude ar <code>current_user_can()</code></h2>
+    <p>Pamats visam zemāk — pirms jebkuras admin izmaiņas pārbaudi, vai lietotājam <em>ir</em> konkrēta tiesība vai loma:</p>
+
+    <pre><code>if ( ! current_user_can( 'editor' ) ) {
+	return; // administratoram šis kods netiek pielietots
+}</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title"><code>current_user_can('editor')</code> pārbauda lomu, ne tiesību</div>
+      Tehniski <code>current_user_can()</code> ir domāts tiesībām (capabilities) — piem. <code>edit_posts</code>. Nosaukumi sakrīt ar lomu nosaukumiem tikai tāpēc, ka WordPress katrai standarta lomai automātiski piešķir tāda paša nosaukuma "pseudo-capability". Praksē tas strādā, bet, ja projektā ir custom lomas, precīzāk ir pārbaudīt reālu tiesību, piem. <code>edit_theme_options</code>.
+    </div>
+
+    <h2>2. Izvēlņu punktu noņemšana ar <code>remove_menu_page</code></h2>
+    <pre><code>function remove_admin_menus() {
+	if ( ! current_user_can( 'editor' ) ) {
+		return;
+	}
+	remove_menu_page( 'edit.php' );                   // Raksti
+	remove_menu_page( 'edit-comments.php' );           // Komentāri
+	remove_menu_page( 'edit.php?post_type=page' );     // Lapas (paslēpj, jo tiek pārvaldītas citādi)
+	remove_menu_page( 'tools.php' );                   // Rīki
+	remove_menu_page( 'themes.php' );                  // Izskats
+}
+add_action( 'admin_menu', 'remove_admin_menus', 999 );</code></pre>
+
+    <div class="callout note">
+      <div class="callout-title">Kāpēc prioritāte <code>999</code>?</div>
+      Izvēlnes punktus reģistrē gan WordPress kodols, gan spraudņi (piem. Rank Math, WPForms) uz <code>admin_menu</code> hooka. Ja tavs <code>remove_menu_page()</code> izpildās pirms tiem, punkta vēl nav — nekā nenoņemsi. Augsta prioritāte (izpildās pēdējais) garantē, ka viss jau ir reģistrēts.
+    </div>
+
+    <h2>3. Konkrētu elementu paslēpšana ar CSS caur <code>admin_head</code></h2>
+    <p>Ja spraudnis nepiedāvā filtru konkrētam izvēlnes punktam (piem. WooCommerce produkti), vienkāršākais risinājums bieži ir CSS:</p>
+
+    <pre><code>function hide_product_menu_css() {
+	if ( ! current_user_can( 'editor' ) ) {
+		return;
+	}
+	echo '&lt;style&gt;
+		#menu-posts-product {
+			display: none !important;
+		}
+	&lt;/style&gt;';
+}
+add_action( 'admin_head', 'hide_product_menu_css' );</code></pre>
+
+    <h2>4. Customizer paneļu noņemšana ar <code>customize_register</code></h2>
+    <p>Ja redaktoram ir dota piekļuve Customizer (<code>edit_theme_options</code> tiesība), var ierobežot, kuras sadaļas tur redzamas:</p>
+
+    <pre><code>// Vispirms iedod redaktoram piekļuvi Customizer vispār
+add_action( 'admin_init', 'atljaut_redaktoram_customizer' );
+function atljaut_redaktoram_customizer() {
+	$role = get_role( 'editor' );
+	if ( $role && ! $role->has_cap( 'edit_theme_options' ) ) {
+		$role->add_cap( 'edit_theme_options' );
+	}
+}
+
+// Tad ierobežo, kuras sadaļas redaktors redz iekšā
+add_action( 'customize_register', 'ierobezot_customizer_redaktoram', 999 );
+function ierobezot_customizer_redaktoram( $wp_customize ) {
+	if ( ! current_user_can( 'administrator' ) ) {
+		$wp_customize->remove_section( 'custom_css' );
+		$wp_customize->remove_panel( 'nav_menus' );
+		$wp_customize->remove_panel( 'widgets' );
+		$wp_customize->remove_section( 'static_front_page' );
+	}
+}</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title"><code>add_cap()</code> saglabājas datubāzē — izsauc tikai vienreiz pa reālu</div>
+      <code>$role->add_cap()</code> uzreiz pieraksta izmaiņu <code>wp_options</code> tabulā (<code>wp_user_roles</code>). Nav problēmu izsaukt to katru <code>admin_init</code> reizi — kods iekšā jau pārbauda <code>!$role->has_cap(...)</code>, tāpēc pēc pirmās reizes tas neko vairs nedara —, bet der zināt, ka tas <em>nav</em> tikai izpildlaika (runtime) iestatījums, kā, piemēram, <code>current_user_can</code> filtrs būtu.
+    </div>
+
+    <h2>Pilns, palaižams piemērs</h2>
+    <p>Šis fails ierobežo "editor" lomu vienā vietā — izvēlnes, produktu CSS un divi Customizer paneļi:</p>
+
+    <pre><code>&lt;?php
+add_action( 'admin_menu', function() {
+	if ( ! current_user_can( 'editor' ) || current_user_can( 'administrator' ) ) return;
+	remove_menu_page( 'tools.php' );
+	remove_menu_page( 'themes.php' );
+}, 999 );
+
+add_action( 'admin_head', function() {
+	if ( ! current_user_can( 'editor' ) || current_user_can( 'administrator' ) ) return;
+	echo '&lt;style&gt;#menu-posts-product{display:none !important;}&lt;/style&gt;';
+});
+
+add_action( 'customize_register', function( $wp_customize ) {
+	if ( current_user_can( 'administrator' ) ) return;
+	$wp_customize->remove_panel( 'nav_menus' );
+	$wp_customize->remove_panel( 'widgets' );
+}, 999 );</code></pre>
+
+    <div class="page-nav">
+      <a href="/pages/wordpress/woocommerce-endpoints.html"><span class="dir">← Atpakaļ</span>WooCommerce endpointi</a>
+      <a href="/pages/wordpress/hooks-un-filtri.html" style="text-align:right;"><span class="dir">Tālāk →</span>Hooki un filtri</a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>

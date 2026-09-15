@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tēmas uzstādīšana un resursi — WordPress — shadow-docs</title>
+<meta name="description" content="after_setup_theme, wp_enqueue_scripts, navigācijas izvēlnes un custom page templates reģistrācija — pilnīgs, palaižams functions.php piemērs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="sidebar-toggle" data-sidebar-toggle aria-label="Izvēlne">☰</button>
+    <a href="/" style="display:flex; align-items:center; gap:0.6rem;">
+      <span class="brand-mark">sd</span>
+      shadow-docs
+    </a>
+  </div>
+  <div class="topbar-actions">
+    <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-title">WordPress</div>
+      <a class="sidebar-link" href="/pages/wordpress/">Pārskats</a>
+      <a class="sidebar-link active" href="/pages/wordpress/tema-uzstadisana.html">Tēmas uzstādīšana</a>
+      <a class="sidebar-link" href="/pages/wordpress/ajax-un-nonce.html">AJAX un nonce</a>
+      <a class="sidebar-link" href="/pages/wordpress/woocommerce-endpoints.html">WooCommerce endpointi</a>
+      <a class="sidebar-link" href="/pages/wordpress/lomas-un-tiesibas.html">Lomas un tiesības</a>
+      <a class="sidebar-link" href="/pages/wordpress/hooks-un-filtri.html">Hooki un filtri</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-title">Citas kategorijas</div>
+      <span class="sidebar-link disabled">JavaScript — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">PHP — tuvākajā laikā</span>
+      <span class="sidebar-link disabled">Git &amp; deploy — tuvākajā laikā</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="crumbs"><a href="/">shadow-docs</a> / <a href="/pages/wordpress/">WordPress</a> / Tēmas uzstādīšana</div>
+    <h1>Tēmas uzstādīšana un resursi</h1>
+    <p class="lede">Katra WordPress tēma sākas ar trim lietām: pasaki WordPress, kādas funkcijas tēma atbalsta, ielādē CSS/JS pareizajā brīdī, un — ja nepieciešams — reģistrē savas lapas veidnes. Zemāk ir reāls piemērs no tēmas <strong>Atvērt Savu Gaismu</strong>.</p>
+
+    <h2>1. Tēmas atbalsta pieteikšana ar <code>after_setup_theme</code></h2>
+    <p>Hook <code>after_setup_theme</code> izpildās pēc tam, kad tēma ir ielādēta, bet pirms lielākās daļas citu hooku. Tas ir pareizais brīdis, kur pieteikt funkcionalitāti (<code>add_theme_support</code>) un reģistrēt navigācijas izvēlnes.</p>
+
+    <pre><code>function asg_theme_setup() {
+	// Pieteiktās funkcijas
+	add_theme_support( 'title-tag' );              // WordPress pats renderē &lt;title&gt;
+	add_theme_support( 'post-thumbnails' );         // Attēlu (thumbnail) atbalsts
+	add_theme_support( 'custom-logo' );             // Logo caur Customizer
+	add_theme_support( 'html5', array(
+		'search-form',
+		'comment-form',
+		'comment-list',
+		'gallery',
+		'caption',
+	) );
+	add_theme_support( 'customize-selective-refresh-widgets' );
+	add_theme_support( 'responsive-embeds' );
+	add_theme_support( 'align-wide' );
+
+	// Navigācijas izvēlnes — parādīsies Izskats → Izvēlnes
+	register_nav_menus( array(
+		'primary' => __( 'Primārā izvēlne', 'atvert-savu-gaismu' ),
+		'footer'  => __( 'Kājene', 'atvert-savu-gaismu' ),
+	) );
+
+	// Tulkojumu fails no /languages
+	load_theme_textdomain( 'atvert-savu-gaismu', get_template_directory() . '/languages' );
+}
+add_action( 'after_setup_theme', 'asg_theme_setup' );</code></pre>
+
+    <div class="callout note">
+      <div class="callout-title">Kāpēc <code>after_setup_theme</code>, nevis tieši theme galvenē?</div>
+      Ja <code>add_theme_support()</code> izpildās pārāk vēlu (piem. <code>init</code>), daži WordPress core mehānismi (piem. post thumbnails reģistrācija) to var vienkārši ignorēt. <code>after_setup_theme</code> ir uzticamākā vieta.
+    </div>
+
+    <h2>2. Stilu un skriptu ielāde ar <code>wp_enqueue_scripts</code></h2>
+    <p>Nekad nevajag rakstīt <code>&lt;link&gt;</code> vai <code>&lt;script&gt;</code> tieši <code>header.php</code> failā — WordPress paredz <code>wp_enqueue_style()</code> / <code>wp_enqueue_script()</code>, kas pareizi pārvalda versijas, atkarības un secību.</p>
+
+    <pre><code>function asg_scripts() {
+	// Ārējie fonti un ikonas
+	wp_enqueue_style(
+		'google-fonts',
+		'https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap',
+		array(),
+		null
+	);
+	wp_enqueue_style( 'font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', array(), '6.5.1' );
+
+	// Tēmas pašas stilu datnes — versija no theme header, lai pārlūks
+	// zina, kad kešs jāatjauno pēc katras izlaiduma
+	wp_enqueue_style( 'asg-style', get_stylesheet_uri(), array(), wp_get_theme()->get( 'Version' ) );
+	wp_enqueue_style( 'asg-custom', get_template_directory_uri() . '/assets/css/styles.css', array(), wp_get_theme()->get( 'Version' ) );
+
+	// jQuery kā atkarība — WordPress to jau reģistrē ('jquery' handle)
+	wp_enqueue_script(
+		'asg-scripts',
+		get_template_directory_uri() . '/assets/js/scripts.js',
+		array( 'jquery' ),
+		wp_get_theme()->get( 'Version' ),
+		true // ielādēt footer, nevis head
+	);
+
+	// Nodod PHP datus uz JS pusi (URL, nonce) — sk. AJAX lapu
+	wp_localize_script( 'asg-scripts', 'asgData', array(
+		'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+		'nonce'    => wp_create_nonce( 'asg_nonce' ),
+		'themeUri' => get_template_directory_uri(),
+	) );
+}
+add_action( 'wp_enqueue_scripts', 'asg_scripts' );</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Padoms — kešbastošana ar <code>filemtime()</code></div>
+      Tēmas versijas numurs (<code>wp_get_theme()->get('Version')</code>) mainās reti — labi ilgtermiņa kešam, bet slikti, kad testē izmaiņas lokāli. Šai tēmai karuseļa CSS izmanto <code>filemtime()</code> tā vietā — versijas numurs mainās katru reizi, kad fails tiek saglabāts:
+      <pre style="margin-top:0.75rem;"><code>wp_enqueue_style(
+	'asg-carousel',
+	get_template_directory_uri() . '/assets/css/carousel.css',
+	array(),
+	filemtime( get_template_directory() . '/assets/css/carousel.css' )
+);</code></pre>
+    </div>
+
+    <h2>3. Custom page templates reģistrācija</h2>
+    <p>WordPress parasti atrod veidnes ar komentāru <code>Template Name:</code> faila augšā, bet apakšmapēs (<code>page-templates/</code>) tas ne vienmēr notiek automātiski visās vidēs. Filtrs <code>theme_page_templates</code> liek tām parādīties Lapas redaktora "Veidne" izvēlnē droši:</p>
+
+    <pre><code>function asg_add_page_templates( $templates ) {
+	$custom_templates = array(
+		'page-templates/page-template-par-mums.php' => __( 'Par Mums Template', 'atvert-savu-gaismu' ),
+		'page-templates/page-template-maratoni.php' => __( 'Maratoni Template', 'atvert-savu-gaismu' ),
+	);
+	return array_merge( $templates, $custom_templates );
+}
+add_filter( 'theme_page_templates', 'asg_add_page_templates' );</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Uzmanies — atslēgas ceļš ir relatīvs pret tēmas mapi</div>
+      Atslēga <code>'page-templates/page-template-par-mums.php'</code> ir ceļš no tēmas saknes, ne no <code>functions.php</code> atrašanās vietas. Ja fails atrodas citur, veidne redaktorā parādīsies, bet izvēloties to izmest baltu ekrānu (fails netiks atrasts).
+    </div>
+
+    <h2>Pilns, palaižams piemērs</h2>
+    <p>Zemāk esošais fails ir pašpietiekams — ielīmē to jaunas tēmas <code>functions.php</code> failā, un tas strādās (pieņemot, ka <code>assets/css/styles.css</code> un <code>assets/js/scripts.js</code> eksistē tēmas mapē):</p>
+
+    <pre><code>&lt;?php
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+function asg_theme_setup() {
+	add_theme_support( 'title-tag' );
+	add_theme_support( 'post-thumbnails' );
+	add_theme_support( 'custom-logo' );
+	register_nav_menus( array(
+		'primary' => __( 'Primārā izvēlne', 'my-theme' ),
+	) );
+}
+add_action( 'after_setup_theme', 'asg_theme_setup' );
+
+function asg_scripts() {
+	wp_enqueue_style( 'my-style', get_stylesheet_uri(), array(), '1.0.0' );
+	wp_enqueue_script(
+		'my-scripts',
+		get_template_directory_uri() . '/assets/js/scripts.js',
+		array( 'jquery' ),
+		'1.0.0',
+		true
+	);
+	wp_localize_script( 'my-scripts', 'myData', array(
+		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		'nonce'   => wp_create_nonce( 'my_nonce' ),
+	) );
+}
+add_action( 'wp_enqueue_scripts', 'asg_scripts' );</code></pre>
+
+    <div class="page-nav">
+      <a href="/pages/wordpress/"><span class="dir">← Atpakaļ</span>WordPress pārskats</a>
+      <a href="/pages/wordpress/ajax-un-nonce.html" style="text-align:right;"><span class="dir">Tālāk →</span>AJAX un nonce</a>
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>Izvietots ar Vercel</span>
+</footer>
+
+<script src="/js/main.js?v=1"></script>
+</body>
+</html>
