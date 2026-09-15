@@ -38,6 +38,7 @@
   --warn-soft: rgba(240, 196, 83, 0.12);
 
   --code-bg: #0c0f11;
+  --code-text: #edf2f3;
   --inline-code-bg: rgba(255, 255, 255, 0.09);
 }
 
@@ -57,6 +58,7 @@
   --warn-soft: rgba(154, 114, 7, 0.08);
 
   --code-bg: #0f1210;
+  --code-text: #eef2f0;
   --inline-code-bg: rgba(0, 0, 0, 0.055);
 }
 
@@ -109,7 +111,7 @@ code {
 
 pre {
   background: var(--code-bg);
-  color: var(--text);
+  color: var(--code-text);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.1rem 1.25rem;
