@@ -18,24 +18,27 @@
   --c-git: #ef6b6b;
 }
 
-/* ---------- Dark theme (default — this is the point) ---------- */
+/* ---------- Dark theme (default — this is the point) ----------
+   Katram slānim (fons / panelis / hover / robeža) jābūt skaidri
+   atšķiramam no kaimiņa — pretējā gadījumā sānjosla, saturs un
+   koda bloki vizuāli saplūst vienā traipā. */
 :root {
-  --bg: #0a0d0e;
-  --bg-panel: #101415;
-  --bg-hover: #161b1c;
-  --border: #262c2e;
-  --text: #d8dee2;
-  --text-dim: #7c8a86;
-  --text-faint: #4d5654;
+  --bg: #12161a;
+  --bg-panel: #1a2024;
+  --bg-hover: #262e33;
+  --border: #3a444a;
+  --text: #edf2f3;
+  --text-dim: #a4b0b4;
+  --text-faint: #6b767a;
 
-  --accent: #5fd38d;
-  --accent-strong: #8ef0ad;
-  --accent-soft: rgba(95, 211, 141, 0.12);
-  --warn: #e2b93b;
-  --warn-soft: rgba(226, 185, 59, 0.1);
+  --accent: #6ee6a3;
+  --accent-strong: #97f4bf;
+  --accent-soft: rgba(110, 230, 163, 0.14);
+  --warn: #f0c453;
+  --warn-soft: rgba(240, 196, 83, 0.12);
 
-  --code-bg: #050707;
-  --inline-code-bg: rgba(255, 255, 255, 0.07);
+  --code-bg: #0c0f11;
+  --inline-code-bg: rgba(255, 255, 255, 0.09);
 }
 
 :root[data-theme="light"] {
