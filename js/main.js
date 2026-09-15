@@ -3,27 +3,21 @@
   var root = document.documentElement;
 
   function applyTheme(theme) {
-    if (theme === "light" || theme === "dark") {
-      root.setAttribute("data-theme", theme);
+    if (theme === "light") {
+      root.setAttribute("data-theme", "light");
     } else {
       root.removeAttribute("data-theme");
     }
   }
 
-  function currentTheme() {
-    var stored = localStorage.getItem(STORAGE_KEY);
-    return stored || "system";
-  }
-
-  applyTheme(currentTheme());
+  applyTheme(localStorage.getItem(STORAGE_KEY));
 
   document.addEventListener("DOMContentLoaded", function () {
     var toggle = document.querySelector("[data-theme-toggle]");
     if (toggle) {
       toggle.addEventListener("click", function () {
-        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        var stored = localStorage.getItem(STORAGE_KEY) || (prefersDark ? "dark" : "light");
-        var next = stored === "dark" ? "light" : "dark";
+        var isLight = root.getAttribute("data-theme") === "light";
+        var next = isLight ? "dark" : "light";
         localStorage.setItem(STORAGE_KEY, next);
         applyTheme(next);
       });

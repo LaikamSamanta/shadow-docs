@@ -7,8 +7,8 @@
 <meta name="description" content="shadow-docs: praktiska tehniskā dokumentācija — WordPress, JavaScript, PHP un vairāk, ar pilnīgiem, palaižamiem koda piemēriem.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=1">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=2">
 </head>
 <body>
 
@@ -19,56 +19,62 @@
   </div>
   <div class="topbar-actions">
     <a class="gh-link" href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a>
-    <button class="theme-toggle" data-theme-toggle title="Pārslēgt tumšo/gaišo režīmu">◐</button>
+    <button class="theme-toggle" data-theme-toggle title="Pārslēgt gaišo/tumšo režīmu">◐</button>
   </div>
 </header>
 
 <section class="hero">
-  <div class="hero-kicker">Tehniskā dokumentācija · v0</div>
+  <div class="hero-kicker">tehniskā dokumentācija · v0</div>
   <h1>Skaidri, pilnīgi koda piemēri — nevis fragmenti.</h1>
-  <p class="lede">shadow-docs ir uzziņu materiāls, kas veidots no reāla, strādājoša koda. Katrs piemērs ir pilnīgs un pārbaudāms — nekas nav izdomāts vai saīsināts uz "..." Sākam ar WordPress sadaļu.</p>
+  <p class="lede">shadow-docs ir uzziņu materiāls, kas veidots no reāla, strādājoša koda. Katrs piemērs ir pilnīgs un pārbaudāms — nekas nav izdomāts vai saīsināts uz "...". Sākam ar WordPress sadaļu.</p>
 </section>
 
-<section style="max-width:1280px; margin:0 auto; padding:0 3rem 4rem;">
-  <h2 style="margin-top:0;">Kategorijas</h2>
-  <div class="card-grid">
+<div class="section-title">Kategorijas</div>
+<div class="dir-list" style="margin-left:3rem; margin-right:3rem; width:calc(100% - 6rem);">
 
-    <a class="card" href="/pages/wordpress/" style="--cat-soft: var(--c-wordpress-soft);">
-      <div class="card-icon" style="color: var(--c-wordpress);">◆</div>
-      <span class="tag">6 lapas</span>
-      <h3>WordPress</h3>
-      <p>Tēmas uzstādīšana, AJAX ar nonce, WooCommerce My Account endpointi, lomu/tiesību pārvaldība, hooki un filtri — no reālas tēmas koda.</p>
-    </a>
+  <a class="dir-row" href="/pages/wordpress/">
+    <span class="dir-index">01</span>
+    <span class="dir-body">
+      <span class="dir-title">WordPress/</span>
+      <span class="dir-desc">Tēmas uzstādīšana, AJAX ar nonce, WooCommerce My Account endpointi, lomu pārvaldība, hooki un filtri — no reālas tēmas koda. 5 lapas.</span>
+    </span>
+    <span class="dir-arrow">→</span>
+  </a>
 
-    <div class="card is-disabled">
-      <div class="card-icon">◇</div>
-      <span class="tag soon">Tuvākajā laikā</span>
-      <h3>JavaScript</h3>
-      <p>Šī sadaļa vēl nav sākta.</p>
-    </div>
-
-    <div class="card is-disabled">
-      <div class="card-icon">◇</div>
-      <span class="tag soon">Tuvākajā laikā</span>
-      <h3>PHP</h3>
-      <p>Šī sadaļa vēl nav sākta.</p>
-    </div>
-
-    <div class="card is-disabled">
-      <div class="card-icon">◇</div>
-      <span class="tag soon">Tuvākajā laikā</span>
-      <h3>Git &amp; deploy</h3>
-      <p>Šī sadaļa vēl nav sākta.</p>
-    </div>
-
+  <div class="dir-row is-disabled">
+    <span class="dir-index">02</span>
+    <span class="dir-body">
+      <span class="dir-title">JavaScript/</span>
+      <span class="dir-desc">Šī sadaļa vēl nav sākta.</span>
+    </span>
+    <span class="dir-soon">drīzumā</span>
   </div>
-</section>
+
+  <div class="dir-row is-disabled">
+    <span class="dir-index">03</span>
+    <span class="dir-body">
+      <span class="dir-title">PHP/</span>
+      <span class="dir-desc">Šī sadaļa vēl nav sākta.</span>
+    </span>
+    <span class="dir-soon">drīzumā</span>
+  </div>
+
+  <div class="dir-row is-disabled">
+    <span class="dir-index">04</span>
+    <span class="dir-body">
+      <span class="dir-title">Git &amp; deploy/</span>
+      <span class="dir-desc">Šī sadaļa vēl nav sākta.</span>
+    </span>
+    <span class="dir-soon">drīzumā</span>
+  </div>
+
+</div>
 
 <footer class="site-footer">
-  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener" style="text-decoration:underline;">GitHub</a></span>
+  <span>shadow-docs · atklāts kods uz <a href="https://github.com/LaikamSamanta/shadow-docs" target="_blank" rel="noopener">GitHub</a></span>
   <span>Izvietots ar Vercel</span>
 </footer>
 
-<script src="/js/main.js?v=1"></script>
+<script src="/js/main.js?v=2"></script>
 </body>
 </html>
